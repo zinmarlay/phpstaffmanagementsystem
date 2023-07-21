@@ -7,18 +7,47 @@ $hostname = "localhost";
 $db = "phpstaffmanagement";
 $pdo = new PDO("mysql:host={$hostname};dbname={$db};charset=utf8",$username,$password);
 
-
-//件数取得SQLの実行
-$sql = "SELECT COUNT(*) As count FROM users";
+$id = '';
+$nameKana = '';
+$gender = '';
+$whereSql = '';
 $param = [];
+// 検索条件が指定されている
+if (isset($_GET['id']) && isset($_GET['name_kana'])) {
+    $id = $_GET['id'];
+    $nameKana = $_GET['name_kana'];
+    $gender = isset($_GET['gender']) ? $_GET['gender'] : '';
+
+// 社員番号が入力されている
+if ($id !== '') {
+    // 検索条件に社員番号を追加
+    $whereSql .= 'AND id = :id ';
+    $param['id'] = $id;
+}
+// 社員名カナが入力されている
+if ($nameKana !== '') {
+    // 検索条件に社員名カナを追加
+    $whereSql .= 'AND name_kana LIKE :name_kana ';
+    $param['name_kana'] = $nameKana . '%';
+}
+// 性別が入力されている
+if ($gender !== '') {
+    // 検索条件に性別を追加
+    $whereSql .= 'AND gender = :gender ';
+    $param['gender'] = $gender;
+}
+}
+//件数取得SQLの実行
+$sql = "SELECT COUNT(*) As count FROM users where 1 = 1 {$whereSql}";
+// $param = [];
 $stmt = $pdo->prepare($sql);
 $stmt->execute($param);
 $count = $stmt->fetch(PDO::FETCH_ASSOC);
 
 //社員情報取得SQLの実行
-$sql = "SELECT * FROM users ORDER BY id";
+$sql = "SELECT * FROM users where 1 = 1 {$whereSql} ORDER BY id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute();
+$stmt->execute($param);
 
 ?>
 
