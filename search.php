@@ -12,6 +12,12 @@ $nameKana = '';
 $gender = '';
 $whereSql = '';
 $param = [];
+
+//deleteUserのsubmit()を押すと、IDを取得できる
+if(mb_strtolower($_SERVER["REQUEST_METHOD"]) == "post"){
+  var_dump($_POST);
+}
+
 // 検索条件が指定されている
 if (isset($_GET['id']) && isset($_GET['name_kana'])) {
     $id = $_GET['id'];
@@ -139,7 +145,7 @@ $stmt->execute($param);
             <td><?php echo htmlspecialchars($row["mail_address"]); ?></td>
             <td class="button_area">
             <button class="edit_button">編集</button>
-            <button class="delete_button">削除</button>
+            <button class="delete_button" onclick="deleteUser(<?php echo htmlspecialchars($row["id"]); ?>);">削除</button>
             </td>
           </tr>
           <?php endwhile;?>
@@ -149,6 +155,18 @@ $stmt->execute($param);
     </div>
   </div>
 </div>
-
+<form action="search.php" name="delete_form"  method="POST">
+  <input type="hidden" name="id" value="" />
+  <input type="hidden" name="delete" value="1" />
+</form>
+<script>
+function deleteUser(id) {
+  if (!window.confirm('社員番号[' + id + ']を削除してよろしいですか?')) {
+    return false;
+  }
+  document.delete_form.id.value = id; 
+  document.delete_form.submit();
+}
+</script>
 </body>
 </html>
