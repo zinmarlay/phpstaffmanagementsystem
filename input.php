@@ -20,7 +20,209 @@ $postLists = [
     "課長",
     "一般",
 ];
+
+$id = '';
+$name = '';
+$nameKana = '';
+$birthday = '';
+$gender = '';
+$organization = '';
+$post = '';
+$startDate = '';
+$tel = '';
+$mailAddress = '';
+$errorMessage = '';
+$successMessage = '';
+
+//データベース接続
+$username = "root";
+$password = "";
+$hostname = "localhost";
+$db = "phpstaffmanagement";
+$pdo = new PDO("mysql:host={$hostname};dbname={$db};charset=utf8",$username,$password);
+
+
+if (mb_strtolower($_SERVER['REQUEST_METHOD']) === 'post') {
+  //  var_dump($_POST);
+    $id = isset($_POST['id']) ? $_POST['id'] : '';
+    $name = isset($_POST['name']) ? $_POST['name'] : '';
+    $nameKana = isset($_POST['name_kana']) ? $_POST['name_kana'] : '';
+    $birthday = isset($_POST['birthday']) ? $_POST['birthday'] : '';
+    $gender = isset($_POST['gender']) ? $_POST['gender'] : '';
+    $organization = isset($_POST['organization']) ? $_POST['organization'] : '';
+    $post = isset($_POST['post']) ? $_POST['post'] : '';
+    $startDate = isset($_POST['start_date']) ? $_POST['start_date'] : '';
+    $tel = isset($_POST['tel']) ? $_POST['tel'] : '';
+    $mailAddress = isset($_POST['mail_address']) ? $_POST['mail_address'] : '';
+
+     //trueならば登録ボタンが押されたということ
+     $isSave = (isset($_POST['save']) && $_POST['save'] === '1') ? true : false; 
+
+    if ($isSave === true) {
+        //POSTされた社員番号の入力チェック
+        if ($id === '') { //空白でないか
+            $errorMessage .= '社員番号を入力してください。<br>';
+        } else if (!preg_match('/\A[0-9]{6}\z/', $id)) { //6桁の数値か
+            $errorMessage .= '社員番号は6桁の数値で入力してください。<br>';
+        } else {
+            //存在しない社員番号か
+            $sql = "SELECT COUNT(*) AS count FROM users WHERE id = :id";
+            $param = array("id" => $id);
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($param);
+            $count = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($count['count'] >= 1) {
+                //同一社員番号が存在したらエラー
+                $errorMessage .= '登録済みの社員番号です。<br>';
+            }
+        }
+        //POSTされた社員名の入力チェック
+        if ($name === '') { //空白でないか
+          $errorMessage .= '社員名を入力してください。<br>';
+      } else if (mb_strlen($name) > 50) { //50文字以内か
+          $errorMessage .= '社員名は50文字以内で入力してください。<br>';
+      }
+
+      //POSTされた社員名カナの入力チェック
+      if ($nameKana === '') { //空白でないか
+          $errorMessage .= '社員名カナを入力してください。<br>';
+      } else if (mb_strlen($nameKana) > 50) { //50文字以内か
+          $errorMessage .= '社員名カナは50文字以内で入力してください。<br>';
+      }
+
+      //POSTされた生年月日の入力チェック
+      if ($birthday === '') { //空白でないか
+          $errorMessage .= '生年月日を入力してください。<br>';
+      } else {
+          // yyyy/mm/dd形式か
+          if (!preg_match('/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', $birthday)) {
+              $errorMessage .= '生年月日を正しく入力してください。<br>';
+          } else {
+              // 存在する日付か
+              list($year, $month, $day) = explode('-', $birthday);
+              if (!checkdate((int)$month, (int)$day, (int)$year)) {
+                  $errorMessage .= '生年月日を正しく入力してください。<br>';
+              }
+          }
+      }
+
+      //POSTされた性別の入力チェック
+      //以下のいずれかか
+      //男性、女性
+      if (!in_array($gender, $genderLists)) {
+          $errorMessage .= '性別を選択してください。<br>';
+      }
+
+      //POSTされた部署の入力チェック
+      //以下のいずれかか
+      //営業部、人事部、総務部、システム開発1部、システム開発2部、システム開発3部、
+      //システム開発4部、システム開発5部
+      if (!in_array($organization, $organizationLists)) {
+          $errorMessage .= '部署を選択してください。<br>';
+      }
+
+      //POSTされた役職の入力チェック
+      //以下のいずれかか
+      //部長、次長、課長、一般
+      if (!in_array($post, $postLists)) {
+          $errorMessage .= '役職を選択してください。<br>';
+      }
+
+      //POSTされた入社年月日の入力チェック
+      if ($startDate === '') { //空白でないか
+          $errorMessage .= '入社年月日を入力してください。<br>';
+      } else {
+          //yyyy/mm/dd形式か
+          if (!preg_match('/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', $startDate)) {
+              $errorMessage .= '入社年月日を正しく入力してください。<br>';
+          } else {
+              //存在する日付か
+              list($year, $month, $day) = explode('-', $startDate);
+              if (!checkdate((int)$month, (int)$day, (int)$year)) {
+                  $errorMessage .= '入社年月日を正しく入力してください。<br>';
+              }
+          }
+      }
+      //POSTされた電話番号の入力チェック
+      if ($tel === '') { //空白でないか
+          $errorMessage .= '電話番号を入力してください。<br>';
+      } else if (!preg_match('/\A[0-9]{1,15}\z/', $id)) { //15桁以内の数値か
+          $errorMessage .= '電話番号は15桁以内の数値で入力してください。<br>';
+      }
+
+      //POSTされたメールアドレスの入力チェック
+      if ($mailAddress === '') { //空白でないか
+          $errorMessage .= 'メールアドレスを入力してください。<br>';
+      } else if (!preg_match(
+          '/\A([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}\z/iD',
+          $mailAddress
+      )) { //メールアドレス形式か
+          $errorMessage .= 'メールアドレスを正しく入力してください。<br>';
+      }
+
+        if($errorMessage === ''){
+            //トランザクション開始
+            $pdo->beginTransaction();
+
+            //社員情報登録SQLの実行
+            $sql  = "INSERT INTO users ( ";
+            $sql .= "  id, ";
+            $sql .= "  name, ";
+            $sql .= "  name_kana, ";
+            $sql .= "  birthday, ";
+            $sql .= "  gender, ";
+            $sql .= "  organization, ";
+            $sql .= "  post, ";
+            $sql .= "  start_date, ";
+            $sql .= "  tel, ";
+            $sql .= "  mail_address, ";
+            $sql .= "  created, ";
+            $sql .= "  updated ";
+            $sql .= ") VALUES (";
+            $sql .= "  :id, ";
+            $sql .= "  :name, ";
+            $sql .= "  :name_kana, ";
+            $sql .= "  :birthday, ";
+            $sql .= "  :gender, ";
+            $sql .= "  :organization, ";;
+            $sql .= "  :post, ";
+            $sql .= "  :start_date, ";
+            $sql .= "  :tel, ";
+            $sql .= "  :mail_address, ";
+            $sql .= "  NOW(), "; //作成日時
+            $sql .= "  NOW() ";  //更新日時
+            $sql .= ")";
+            $param = array(
+                "id" => $id,
+                "name" => $name,
+                "name_kana" => $nameKana,
+                "birthday" => $birthday,
+                "gender" => $gender,
+                "organization" => $organization,
+                "post" => $post,
+                "start_date" => $startDate,
+                "tel" => $tel,
+                "mail_address" => $mailAddress,
+            );
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($param);
+    
+            //コミット
+            $pdo->commit();
+            $successMessage = "登録完了しました。";
+        }
+        // else{
+        //     echo $errorMessage;
+        // }
+
+    }
+}
+   
+
+
 ?>
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -55,41 +257,56 @@ $postLists = [
         <?php //例)性別を選択してください。 ?>
         <?php //例)XXXXXを入力してください。 ?>
         <?php //例)登録完了しました。 ?>
+        <?php if ($errorMessage !== '') { ?>
+          <p class="error_message"><?php echo $errorMessage; ?></p>
+        <?php } ?>
+        <?php //例)削除完了しました。 ?>
+        <?php if ($successMessage !== '') { ?>
+          <p class="success_message"><?php echo $successMessage; ?></p>
+        <?php } ?>
 
         <?php //各入力項目表示 ?>
         <table>
           <tbody>
             <tr>
               <td>社員番号</td>
-              <td><input type="text" name="id" value="" /></td>
+              <td><input type="text" name="id" 
+                value="<?php echo htmlspecialchars($id); ?>" /></td>
             </tr>
             <tr>
               <td>社員名</td>
-              <td><input type="text" name="name" value="" /></td>
+              <td><input type="text" name="name" 
+                value="<?php echo htmlspecialchars($name); ?>" /></td>
             </tr>
             <tr>
               <td>社員名カナ</td>
-              <td><input type="text" name="name_kana" value="" /></td>
+              <td><input type="text" name="name_kana" 
+                value="<?php echo htmlspecialchars($nameKana); ?>" /></td>
             </tr>
             <tr>
               <td>生年月日</td>
-              <td><input type="date" name="birthday" value="" /></td>
+              <td><input type="date" name="birthday" 
+                value="<?php echo htmlspecialchars($birthday); ?>" /></td>
             </tr>
             <tr>
               <td>性別</td>
               <td>
-                <?php foreach ($genderLists as $value):?>
-                <input type="radio" name="gender" value="<?php echo $value ?>" ><?php echo $value ?>
-                <?php endforeach;?>
+                <?php foreach($genderLists as $value) { ?>
+                  <input type="radio" name="gender" value="<?php echo $value; ?>" 
+                  <?php echo $gender === $value ? "checked" : ""; ?>>
+                  <?php echo $value; ?>
+                <?php } ?>
               </td>
             </tr>
             <tr>
               <td>部署</td>
               <td>
                 <select name="organization">
-                <?php foreach ($organizationLists as $value):?>
-                  <option value="<?php echo $value ?>" ><?php echo $value ?></option>
-                  <?php endforeach;?>    
+                  <?php foreach($organizationLists as $value) { ?>
+                    <option value="<?php echo $value; ?>"
+                    <?php echo $organization === $value ? "selected" : ""; ?>>
+                    <?php echo $value; ?></option>
+                  <?php } ?>
                 </select>
                </td>
              </tr>
@@ -97,23 +314,28 @@ $postLists = [
               <td>役職</td>
               <td>
                 <select name="post">
-                <?php foreach ($postLists as $value):?>
-                  <option value="<?php echo $value ?>" ><?php echo $value ?></option>
-                  <?php endforeach;?> 
+                  <?php foreach($postLists as $value) { ?>
+                    <option value="<?php echo $value; ?>"
+                    <?php echo $post === $value ? "selected" : ""; ?>>
+                    <?php echo $value; ?></option>
+                  <?php } ?>
                 </select>
               </td>
             </tr>
             <tr>
               <td>入社年月日</td>
-              <td><input type="date" name="start_date" value="" /></td>
+              <td><input type="date" name="start_date" 
+                value="<?php echo htmlspecialchars($startDate); ?>" /></td>
             </tr>
             <tr>
               <td>電話番号(ハイフン無し)</td>
-              <td><input type="text" name="tel" value="" /></td>
+              <td><input type="text" name="tel" 
+                value="<?php echo htmlspecialchars($tel); ?>" /></td>
             </tr>
             <tr>
               <td>メールアドレス</td>
-              <td><input type="text" name="mail_address" value="" /></td>
+              <td><input type="text" name="mail_address" 
+                value="<?php echo htmlspecialchars($mailAddress); ?>" /></td>
             </tr>
           </tbody>
         </table>
