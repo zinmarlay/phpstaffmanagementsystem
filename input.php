@@ -43,7 +43,7 @@ $pdo = new PDO("mysql:host={$hostname};dbname={$db};charset=utf8",$username,$pas
 
 
 if (mb_strtolower($_SERVER['REQUEST_METHOD']) === 'post') {
-  //  var_dump($_POST);
+    var_dump($_POST);
     $id = isset($_POST['id']) ? $_POST['id'] : '';
     $name = isset($_POST['name']) ? $_POST['name'] : '';
     $nameKana = isset($_POST['name_kana']) ? $_POST['name_kana'] : '';

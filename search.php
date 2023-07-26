@@ -187,7 +187,10 @@ $stmt->execute($param);
             <td><?php echo htmlspecialchars($row["tel"]); ?></td>
             <td><?php echo htmlspecialchars($row["mail_address"]); ?></td>
             <td class="button_area">
-            <button class="edit_button">編集</button>
+            <button class="edit_button" 
+            onclick="editUser('<?php echo htmlspecialchars($row["id"]); ?>');">
+              編集
+            </button>
             <button class="delete_button" onclick="deleteUser('<?php echo htmlspecialchars($row["id"]); ?>');">削除</button>
             </td>
           </tr>
@@ -198,11 +201,20 @@ $stmt->execute($param);
     </div>
   </div>
 </div>
+<form action="input.php" name="edit_form"  method="POST">
+  <input type="hidden" name="id" value="" />
+  <input type="hidden" name="edit" value="1" />
+</form>
 <form action="search.php" name="delete_form"  method="POST">
   <input type="hidden" name="id" value="" />
   <input type="hidden" name="delete" value="1" />
 </form>
 <script>
+function editUser(id){
+  document.edit_form.id.value = id;
+  document.edit_form.submit();
+}
+
 function deleteUser(id) {
   if (!window.confirm('社員番号[' + id + ']を削除してよろしいですか?')) {
     return false;
