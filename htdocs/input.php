@@ -2,6 +2,13 @@
 declare(strict_types=1);
 require_once(dirname(__DIR__) . "/library/common.php");
 
+session_start();
+
+if(!isset($_SESSION["id"])){
+    header("Location:login.php");
+    exit;
+}
+
 $id = '';
 $name = '';
 $nameKana = '';
