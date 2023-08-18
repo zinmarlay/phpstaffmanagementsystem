@@ -10,7 +10,7 @@
   <?php } ?>
 
   <div class="text_center">
-    <form action="login.php" method="POST">
+    <form action="index.php" method="POST">
       <div id="login_area">
         <div class="mb20">
           <span class="input_label">ログインID</span>
